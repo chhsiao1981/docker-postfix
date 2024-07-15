@@ -135,3 +135,9 @@ scalemail-backend unix -       n       n       -       2       pipe
   flags=R user=scalemail argv=/usr/lib/scalemail/bin/scalemail-store ${nexthop} ${user} ${extension}
 mailman   unix  -       n       n       -       -       pipe
   flags=FRX user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py ${nexthop} ${user}
+
+# smtp over tls
+smtps inet n - y - - smtpd
+    -o syslog_name=postfix/smtps
+    -o smtpd_tls_wrappermode=yes
+    -o smtpd_sasl_auth_enable=yes
