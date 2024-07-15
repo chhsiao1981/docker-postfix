@@ -1,0 +1,10 @@
+version: '2'
+services:
+  postfix:
+    image: chhsiao1981/docker-postfix
+    volumes:
+      - ${POSTFIX_MAIN_CF}:/etc/postfix/main.cf
+      - ${POSTFIX_MASTER_CF}:/etc/postfix/master.cf
+    ports:
+      - "127.0.0.1:25:25"
+      - "127.0.0.1:587:587"

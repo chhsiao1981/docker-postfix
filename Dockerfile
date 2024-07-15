@@ -1,6 +1,6 @@
-FROM alpine:3.9.4
+FROM debian:bookworm-slim
 
-RUN echo "http://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && apk update && apk add postfix
+RUN DEBIAN_FRONTEND=noninteractive && apt update && apt install -y postfix
 
 EXPOSE 25 465 587
 
