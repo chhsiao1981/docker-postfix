@@ -22,7 +22,7 @@ jobs:
         env:
           git_tag: ${{ steps.git_info.outputs.tag }}
         run: |
-          repo=${{ env.repo_name }}
+          repo=${{ github.repository }}
           tag="${git_tag:-latest}"  # if build triggered by tag, use tag name
 
           dock_image=$repo:$tag
