@@ -1,13 +1,19 @@
-docker-postfix
-==========
+# docker-postfix
 postfix with alpine-linux as docker-image
 
 With the evolution of this repo, we will add tls / sasl / stdout-log in the end.
 
-example.yaml
------
+## docker-compose.yaml
+`docker-compose.yaml` is an example for docker-compose deployment.
 
-example.yaml is an example for k8s deployment.
+Steps to deploy docker-compose:
+
+1. `docker-compose --env-file docker_compose.env -f docker-compose.yaml up -d`
+
+
+## k8s.yaml
+
+`k8s.yaml` is an example for k8s deployment.
 
 Difference with the default settings:
 
@@ -19,10 +25,10 @@ Difference with the default settings:
 
 Steps to deploy to k8s:
 
-1. kubectl create namespace postfix
-2. kubectl create secret tls postfix-tls --key [key-file] --cert [cert-file] --namespace postfix
-3. modify the followings in example.yaml
+1. `kubectl create namespace postfix`
+2. `kubectl create secret tls postfix-tls --key [key-file] --cert [cert-file] --namespace postfix`
+3. modify the followings in `k8s.yaml`
     * mynetworks
     * myhostname
     * mydomain
-4. kubectl apply -f example.yaml
+4. `kubectl apply -f k8s.yaml`
