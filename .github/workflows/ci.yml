@@ -26,6 +26,16 @@ jobs:
           tag="${git_tag:-latest}"  # if build triggered by tag, use tag name
 
           dock_image=$repo:$tag
+          dock_image_latest=$repo:latest
+          echo $dock_image
+          echo "dock_image=$dock_image" >> $GITHUB_OUTPUT
+      - name: Determine image tags
+        id: determine_latest
+        run: |
+          repo=${{ github.repository }}
+          tag="latest"
+
+          dock_image=$repo:$tag
           echo $dock_image
           echo "dock_image=$dock_image" >> $GITHUB_OUTPUT
       - uses: actions/checkout@v4
@@ -54,7 +64,7 @@ jobs:
           file: ./Dockerfile
           tags: |
             docker.io/${{ steps.determine.outputs.dock_image }}
-            ghcr.io/${{ steps.determine.outputs.dock_image }}
+            docker.io/${{ steps.determine_latest.outputs.dock_image }}
           platforms: linux/amd64,linux/arm64
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
