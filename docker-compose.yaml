@@ -1,4 +1,5 @@
-version: '2'
+name: docker-postfix
+
 services:
   postfix:
     image: chhsiao1981/docker-postfix
@@ -7,4 +8,5 @@ services:
       - ${POSTFIX_MASTER_CF}:/etc/postfix/master.cf
     ports:
       - "127.0.0.1:25:25"
+      - "127.0.0.1:465:465"
       - "127.0.0.1:587:587"

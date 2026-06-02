@@ -1,6 +1,6 @@
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
-RUN DEBIAN_FRONTEND=noninteractive && apt update && apt install -y postfix
+RUN apt update && DEBIAN_FRONTEND=noninteractive apt install -y postfix
 
 EXPOSE 25 465 587
 

@@ -16,101 +16,249 @@ metadata:
   namespace: postfix
 data:
   master.cf: |
+    #
+    # Postfix master process configuration file.  For details on the format
+    # of the file, see the master(5) manual page (command: "man 5 master" or
+    # on-line: https://www.postfix.org/master.5.html).
+    #
+    # Do not forget to execute "postfix reload" after editing this file.
+    #
+    # ==========================================================================
     # service type  private unpriv  chroot  wakeup  maxproc command + args
     #               (yes)   (yes)   (no)    (never) (100)
     # ==========================================================================
-
-    smtp      inet  n       -       n       -       -       smtpd
-    pickup    unix  n       -       n       60      1       pickup
-    cleanup   unix  n       -       n       -       0       cleanup
-    qmgr      unix  n       -       n       300     1       qmgr
-    tlsmgr    unix  -       -       n       1000?   1       tlsmgr
-    rewrite   unix  -       -       n       -       -       trivial-rewrite
-    bounce    unix  -       -       n       -       0       bounce
-    defer     unix  -       -       n       -       0       bounce
-    trace     unix  -       -       n       -       0       bounce
-    verify    unix  -       -       n       -       1       verify
-    flush     unix  n       -       n       1000?   0       flush
-    proxymap  unix  -       -       n       -       -       proxymap
-    proxywrite unix -       -       n       -       1       proxymap
-    smtp      unix  -       -       n       -       -       smtp
-    relay     unix  -       -       n       -       -       smtp
-        -o syslog_name=postfix/$service_name
-    showq     unix  n       -       n       -       -       showq
-    error     unix  -       -       n       -       -       error
-    retry     unix  -       -       n       -       -       error
-    discard   unix  -       -       n       -       -       discard
-    local     unix  -       n       n       -       -       local
-    virtual   unix  -       n       n       -       -       virtual
-    lmtp      unix  -       -       n       -       -       lmtp
-    anvil     unix  -       -       n       -       1       anvil
-    scache    unix  -       -       n       -       1       scache
-
-    # log to stdout
-    postlog   unix-dgram n  -       n       -       1       postlogd
-
-    # smtp over tls
-    smtps inet n - y - - smtpd
-      -o syslog_name=postfix/smtps
+    smtp      inet  n       -       y       -       -       smtpd
+    #smtp      inet  n       -       y       -       1       postscreen
+    #smtpd     pass  -       -       y       -       -       smtpd
+    #dnsblog   unix  -       -       y       -       0       dnsblog
+    #tlsproxy  unix  -       -       y       -       0       tlsproxy
+    # Choose one: enable submission for loopback clients only, or for any client.
+    #127.0.0.1:submission inet n -   y       -       -       smtpd
+    submission inet n       -       y       -       -       smtpd
+      -o syslog_name=postfix/submission
+      -o smtpd_forbid_unauth_pipelining=no
+      -o smtpd_tls_security_level=encrypt
+      -o smtpd_sasl_auth_enable=yes
+      -o smtpd_tls_auth_only=yes
+      -o local_header_rewrite_clients=static:all
+      -o smtpd_hide_client_session=yes
+    #  -o smtpd_reject_unlisted_recipient=no
+    #     Instead of specifying complex smtpd_<xxx>_restrictions here,
+    #     specify "smtpd_<xxx>_restrictions=$mua_<xxx>_restrictions"
+    #     here, and specify mua_<xxx>_restrictions in main.cf (where
+    #     "<xxx>" is "client", "helo", "sender", "relay", or "recipient").
+    #  -o smtpd_client_restrictions=
+    #  -o smtpd_helo_restrictions=
+    #  -o smtpd_sender_restrictions=
+    #  -o smtpd_relay_restrictions=
+    #  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject
+    #  -o milter_macro_daemon_name=ORIGINATING
+    # Choose one: enable submissions for loopback clients only, or for any client.
+    #127.0.0.1:submissions inet n  -       y       -       -       smtpd
+    submissions     inet  n       -       y       -       -       smtpd
+      -o syslog_name=postfix/submissions
+      -o smtpd_forbid_unauth_pipelining=no
       -o smtpd_tls_wrappermode=yes
       -o smtpd_sasl_auth_enable=yes
+      -o local_header_rewrite_clients=static:all
+      -o smtpd_hide_client_session=yes
+    #  -o smtpd_reject_unlisted_recipient=no
+    #     Instead of specifying complex smtpd_<xxx>_restrictions here,
+    #     specify "smtpd_<xxx>_restrictions=$mua_<xxx>_restrictions"
+    #     here, and specify mua_<xxx>_restrictions in main.cf (where
+    #     "<xxx>" is "client", "helo", "sender", "relay", or "recipient").
+    #  -o smtpd_client_restrictions=
+    #  -o smtpd_helo_restrictions=
+    #  -o smtpd_sender_restrictions=
+    #  -o smtpd_relay_restrictions=
+    #  -o smtpd_recipient_restrictions=permit_sasl_authenticated,reject
+    #  -o milter_macro_daemon_name=ORIGINATING
+    #628       inet  n       -       y       -       -       qmqpd
+    pickup    unix  n       -       y       60      1       pickup
+    cleanup   unix  n       -       y       -       0       cleanup
+    qmgr      unix  n       -       n       300     1       qmgr
+    #qmgr     unix  n       -       n       300     1       oqmgr
+    tlsmgr    unix  -       -       y       1000?   1       tlsmgr
+    rewrite   unix  -       -       y       -       -       trivial-rewrite
+    bounce    unix  -       -       y       -       0       bounce
+    defer     unix  -       -       y       -       0       bounce
+    trace     unix  -       -       y       -       0       bounce
+    verify    unix  -       -       y       -       1       verify
+    flush     unix  n       -       y       1000?   0       flush
+    proxymap  unix  -       -       n       -       -       proxymap
+    proxywrite unix -       -       n       -       1       proxymap
+    smtp      unix  -       -       y       -       -       smtp
+    relay     unix  -       -       y       -       -       smtp
+            -o syslog_name=${multi_instance_name?{$multi_instance_name}:{postfix}}/$service_name
+    #       -o smtp_helo_timeout=5 -o smtp_connect_timeout=5
+    showq     unix  n       -       y       -       -       showq
+    error     unix  -       -       y       -       -       error
+    retry     unix  -       -       y       -       -       error
+    discard   unix  -       -       y       -       -       discard
+    local     unix  -       n       n       -       -       local
+    virtual   unix  -       n       n       -       -       virtual
+    lmtp      unix  -       -       y       -       -       lmtp
+    anvil     unix  -       -       y       -       1       anvil
+    scache    unix  -       -       y       -       1       scache
+    postlog   unix-dgram n  -       n       -       1       postlogd
+    #
+    # ====================================================================
+    # Interfaces to non-Postfix software. Be sure to examine the manual
+    # pages of the non-Postfix software to find out what options it wants.
+    #
+    # Many of the following services use the Postfix pipe(8) delivery
+    # agent.  See the pipe(8) man page for information about ${recipient}
+    # and other message envelope options.
+    # ====================================================================
+    #
+    # maildrop. See the Postfix MAILDROP_README file for details.
+    # Also specify in main.cf: maildrop_destination_recipient_limit=1
+    #
+    #maildrop  unix  -       n       n       -       -       pipe
+    #  flags=DRXhu user=vmail argv=/usr/bin/maildrop -d ${recipient}
+    #
+    # ====================================================================
+    #
+    # Recent Cyrus versions can use the existing "lmtp" master.cf entry.
+    #
+    # Specify in cyrus.conf:
+    #   lmtp    cmd="lmtpd -a" listen="localhost:lmtp" proto=tcp4
+    #
+    # Specify in main.cf one or more of the following:
+    #  mailbox_transport = lmtp:inet:localhost
+    #  virtual_transport = lmtp:inet:localhost
+    #
+    # ====================================================================
+    #
+    # Cyrus 2.1.5 (Amos Gouaux)
+    # Also specify in main.cf: cyrus_destination_recipient_limit=1
+    #
+    #cyrus     unix  -       n       n       -       -       pipe
+    #  flags=DRX user=cyrus argv=/cyrus/bin/deliver -e -r ${sender} -m ${extension} ${user}
+    #
+    # ====================================================================
+    #
+    # Old example of delivery via Cyrus.
+    #
+    #old-cyrus unix  -       n       n       -       -       pipe
+    #  flags=R user=cyrus argv=/cyrus/bin/deliver -e -m ${extension} ${user}
+    #
+    # ====================================================================
+    #
+    # See the Postfix UUCP_README file for configuration details.
+    #
+    #uucp      unix  -       n       n       -       -       pipe
+    #  flags=Fqhu user=uucp argv=uux -r -n -z -a$sender - $nexthop!rmail ($recipient)
+    #
+    # ====================================================================
+    #
+    # Other external delivery methods.
+    #
+    #ifmail    unix  -       n       n       -       -       pipe
+    #  flags=F user=ftn argv=/usr/lib/ifmail/ifmail -r $nexthop ($recipient)
+    #
+    #bsmtp     unix  -       n       n       -       -       pipe
+    #  flags=Fq. user=bsmtp argv=/usr/lib/bsmtp/bsmtp -f $sender $nexthop $recipient
+    #
+    #scalemail-backend unix -       n       n       -       2       pipe
+    #  flags=R user=scalemail argv=/usr/lib/scalemail/bin/scalemail-store
+    #  ${nexthop} ${user} ${extension}
+    #
+    #mailman   unix  -       n       n       -       -       pipe
+    #  flags=FRX user=list argv=/usr/lib/mailman/bin/postfix-to-mailman.py
+    #  ${nexthop} ${user}
 
   main.cf: |
-    mynetworks = [MYNETWORKS IN CIDR, separated by ,]
-
-    compatibility_level = 2
-
-    queue_directory = /var/spool/postfix
-    command_directory = /usr/sbin
-    daemon_directory = /usr/libexec/postfix
-    data_directory = /var/lib/postfix
-    mail_owner = postfix
-
+    mynetworks = [MYNETWORKS] 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
     myhostname = [MYHOSTNAME]
-    mydomain = [MYDOMAIN]
-    myorigin = $mydomain
-    mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
-    unknown_local_recipient_reject_code = 550
+    # See /usr/share/postfix/main.cf.dist for a commented, more complete version
 
-    inet_protocols = ipv4
-    inet_interfaces = all
+    # See http://www.postfix.org/COMPATIBILITY_README.html
+    compatibility_level = 3.9
 
+    # Which domain that locally-originated mail appears to come from.
+    # Debian policy suggests to read this value from /etc/mailname.
+    #XX needs a review in postinst&config
+    #myorigin = /etc/mailname
+    #myorigin = $mydomain
+    myorigin = $myhostname
+
+    # Text that follows the 220 code in the SMTP server's greeting banner.
+    # You MUST specify $myhostname at the start due to an RFC requirement.
+    smtpd_banner = $myhostname ESMTP $mail_name (Debian)
+
+    # IP protocols to use: ipv4, ipv6, or all
+    # (set this explicitly so `post-install upgrade-configuration' wont complain)
+    inet_protocols = all
+
+    # List of "trusted" SMTP clients (maptype:mapname allowed) that have more
+    # privileges than "strangers".  If mynetworks is not specified (the default),
+    # mynetworks_style is used to compute its value.
+    #mynetworks_style = class
+    #mynetworks_style = subnet
+    mynetworks_style = host
+    #
+
+    # Uncomment the next line to generate "delayed mail" warnings
+    #delay_warning_time = 4h
+
+    # List of domains (maptype:mapname allowed) that this machine considers
+    # itself the final destination for.
+    mydestination = localhost, $myhostname, localhost.localdomain, localhost
+
+    # Maximum size of a user mailbox
     mailbox_size_limit = 0
+
+    # Optional external command to use instead of mailbox delivery.  If set,
+    # you must set up an alias to forward root mail to a real user.
+    #mailbox_command = /usr/bin/procmail
+    #mailbox_command = /usr/bin/procmail -a "$EXTENSION"
+    mailbox_command =
+
+    # List of alias maps to use to lookup local addresses.
+    # Per Debian Policy it should be /etc/aliases.
+    alias_maps = hash:/etc/aliases
+
+    # List of alias maps to make indexes on, when running newaliases.
+    alias_database = hash:/etc/aliases
+
+    # Notify (or not) local biff service when new mail arrives.
+    # Rarely used these days.
+    biff = no
+
+    # Separator between user name and address extension (user+foo@domain)
+    #recipient_delimiter = +
     recipient_delimiter = +
 
-    sendmail_path = /usr/sbin/sendmail
-    newaliases_path = /usr/bin/newaliases
-    mailq_path = /usr/bin/mailq
+    # A host to send "other" mail to
+    #relayhost = $mydomain
+    #relayhost = [gateway.example.com]
+    #relayhost = [ip.add.re.ss]:port
+    #relayhost = uucphost
+    relayhost =
 
-    setgid_group = postdrop
-    html_directory = no
-    readme_directory = no
+    # Where to look for Cyrus SASL configuration files.  Upstream default is unset
+    # (use compiled-in SASL library default), Debian Policy says it should be
+    # /etc/postfix/sasl.
+    cyrus_sasl_config_path = /etc/postfix/sasl
 
-    biff = no
-    append_dot_mydomain = no
+    # SMTP server RSA key and certificate in PEM format
+    smtpd_tls_key_file = /etc/postfix/ssl/tls.key
+    smtpd_tls_cert_file = /etc/postfix/ssl/tls.crt
+    # SMTP Server security level: none|may|encrypt
+    smtpd_tls_security_level = may
 
-    meta_directory = /etc/postfix
-    shlib_directory = /usr/lib/postfix
-
-    alias_maps = hash:/etc/postfix/aliases
-    alias_database = hash:/etc/postfix/aliases
-
-    # relay-restriction
-    # smtpd_relay_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination
-    smtpd_relay_restrictions = permit_mynetworks, reject
-
-    # banner
-    smtpd_banner = $myhostname ESMTP $mail_name ($mail_version)
-
-    # stdout
-    maillog_file = /dev/stdout
-
-    # TLS parameters
-    smtpd_tls_cert_file=/etc/ssl/tls.crt
-    smtpd_tls_key_file=/etc/ssl/tls.key
-    smtpd_use_tls=yes
-    smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+    # List of CAs for SMTP Client to trust
+    # Prefer this over _CApath when smtp is running chrooted
+    smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+    # SMTP Client TLS security level: none|may|encrypt|...
+    smtp_tls_security_level = may
+    # SMTP Client TLS session cache
     smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+    smtpd_relay_restrictions = permit_mynetworks, reject
+    inet_interfaces = all
+    default_transport = error
+    relay_transport = error
 
 # postfix
 ---
@@ -153,8 +301,8 @@ spec:
             - name: postfix-config
               mountPath: /etc/postfix/master.cf
               subPath: master.cf
-            - name: le-tls
-              mountPath: /etc/ssl
+            - name: postfix-tls
+              mountPath: /etc/postfix/ssl
 
 # postfix-network
 ---
